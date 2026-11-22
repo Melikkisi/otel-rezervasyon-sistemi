@@ -105,7 +105,6 @@ işlemleri, [Postman koleksiyonu](Mavi-Otel.postman_collection.json) API istekle
 | REST CRUD, katmanlar, JWT, üç rol | Flask uygulaması ve yetkilendirme testleri |
 | Üç role ait ekranlar | templates/index.html, static/app.js, static/style.css |
 | API koleksiyonu, test ve rapor | docs/API.md, Postman koleksiyonu, TEST_RESULTS.md, tests/ |
-| Kısa video ve YouTube | DEMO.md çekim akışı; bağlantı README'de |
 | GitHub deposu | README, `.gitignore`, GitHub Actions test iş akışı |
 | Ek puan: e-posta bildirimi | `notifications.py`, onay sonrası gönderim, e-posta testi |
 | Ek puan: raporların grafikle gösterimi | Yönetici rapor ekranındaki aylık doluluk/gelir grafikleri |

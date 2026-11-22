@@ -52,9 +52,10 @@ python run.py
 `init_db.py` yalnızca boş veritabanına kurulum yapar; mevcut tabloları silmez.
 Windows'ta aktivasyon komutu `.venv\Scripts\activate` olur.
 
-### Bu bilgisayardaki hazır yerel demo
+### Proje klasöründe ayrı MySQL ile
 
-Proje klasöründe kurulan `.venv` ve ayrı `.local/mysql` veritabanını yeniden başlatmak için:
+Sistemde MySQL 8.4 kurulu ise (ör. Homebrew), proje klasörüne özel bir MySQL örneği
+başlatıp veritabanını kurmak ve uygulamayı açmak için:
 
 ```bash
 .venv/bin/python scripts/local_demo.py
@@ -105,7 +106,7 @@ E-posta, veritabanı işlemi COMMIT edildikten sonra gönderilir; gönderim hata
 rezervasyonu iptal etmez, yalnızca günlüğe yazılır.
 
 - `.env` içinde `SMTP_HOST` boşsa e-postalar `.local/mail/` klasörüne `.eml` dosyası olarak
-  kaydedilir. Bu dosyalar Mail/Outlook ile açılabilir; sunumda göstermek için idealdir.
+  kaydedilir. Bu dosyalar Mail/Outlook ile açılabilir.
 - Gerçek gönderim için SMTP bilgilerini girin. Örneğin Gmail için `SMTP_HOST=smtp.gmail.com`,
   `SMTP_PORT=587`, `SMTP_USER` ve uygulama şifresi (`SMTP_PASSWORD`).
 - Arayüz, e-postanın hangi adrese gönderildiğini bildirim olarak gösterir.
@@ -125,7 +126,7 @@ app/
 database/
   schema.sql          Tablolar, indeksler, tetikleyiciler, prosedürler, view'lar
   seed.sql            Örnek veri ve demo kullanıcıları
-docs/                 Rapor, ER diyagramı, Postman, test ve sunum kılavuzu
+docs/                 Rapor, ER diyagramı, API, Postman ve test sonuçları
 scripts/              Kurulum, yerel demo ve indeks ölçümü
 tests/                Gerçek MySQL entegrasyon testleri
 ```
@@ -152,30 +153,6 @@ gereklidir. Bu yetkiyi sadece yerel test hesabına verin. Test kullanıcıları 
 - [Test senaryoları ve doğrulama sonuçları](docs/TEST_RESULTS.md)
 - [REST API özeti ve tablo eşlemesi](docs/API.md)
 - [Postman koleksiyonu](docs/Mavi-Otel.postman_collection.json)
-- [Sunum ve video çekim akışı](docs/DEMO.md)
-
-## GitHub'a yükleme
-
-GitHub'da boş bir depo oluşturduktan sonra aşağıdaki komutlar yeterlidir. `.env`, `.local`
-ve `.venv` `.gitignore` ile dışarıda bırakılır.
-
-```bash
-git init -b main
-git add .
-git status
-git commit -m "Otel rezervasyon ve konaklama yönetim sistemi"
-git remote add origin https://github.com/KULLANICI/DEPO.git
-git push -u origin main
-```
-
-## Ekip ve sunum
-
-| Ad Soyad | Öğrenci no |
-| --- | --- |
-| | |
-| | |
-
-Tanıtım videosu: _YouTube bağlantısı eklenecek_
 
 ## Kapsam
 

@@ -1,7 +1,7 @@
 """Rezervasyon onayı e-postası.
 
 SMTP_HOST tanımlıysa e-posta SMTP ile gönderilir. Tanımlı değilse mesaj MAIL_DIR
-klasörüne .eml dosyası olarak yazılır (yerel geliştirme ve sunum için).
+klasörüne .eml dosyası olarak yazılır (yerel geliştirme için).
 Testlerde mesajlar bellekteki kutuda tutulur. Bildirim hatası rezervasyonu
 geri almaz; rezervasyon zaten kaydedilmiş olur ve hata günlüğe yazılır.
 """
