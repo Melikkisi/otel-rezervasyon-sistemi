@@ -1,5 +1,7 @@
 # Mavi Otel · Rezervasyon ve Konaklama Yönetimi
 
+[![MySQL testleri](https://github.com/Melikkisi/otel-rezervasyon-sistemi/actions/workflows/tests.yml/badge.svg)](https://github.com/Melikkisi/otel-rezervasyon-sistemi/actions/workflows/tests.yml)
+
 Veritabanı Yönetim Sistemleri dersi için **Flask + MySQL 8.4** ile geliştirilmiş,
 Türkçe arayüzlü otel otomasyonu. Misafir, resepsiyon ve yönetici rollerini kapsar.
 

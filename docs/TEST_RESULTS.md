@@ -8,6 +8,13 @@ bittiğinde bu veritabanı silinir. Demo veritabanı (`mavi_otel`) değişmez.
 python -m pytest -v
 ```
 
+## Son çalıştırma
+
+Testler her `push` işleminde GitHub Actions üzerinde, temiz bir **MySQL 8.4** sunucusuyla
+otomatik çalışır ([iş akışı](../.github/workflows/tests.yml)). Son sonuç:
+**17 test, 17 başarılı** (veritabanı testleri 8, API testleri 9).
+Güncel durum için deponun **Actions** sekmesine veya README'deki rozete bakılabilir.
+
 ## Veritabanı testleri (`tests/test_database.py`)
 
 Bu testler uygulamayı kullanmadan doğrudan SQL çalıştırır. Böylece kuralların
