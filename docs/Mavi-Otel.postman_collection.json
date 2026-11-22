@@ -1,0 +1,3338 @@
+{
+  "info": {
+    "_postman_id": "10641e40-b269-4dc2-9f84-33b2b586d721",
+    "name": "Mavi Otel — REST API ve uçtan uca testler",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Flask + MySQL otel projesinin çalıştırılabilir API teslim koleksiyonu. Önce demo veritabanını yükleyin ve uygulamayı başlatın; base_url değişkenini gerekirse düzenleyin. Collection Runner / Newman ile klasörleri sırayla, tek iterasyonda çalıştırın. Tarihler Europe/Istanbul (+03:00) gününe göre otomatik üretilir. Demo parolaları yalnızca yerel geliştirme içindir.\n\nAkış: üç rol ile giriş, yeni misafir kaydı ve doğrulama; stored procedure ve view okumaları; beş yönetim kaynağının CRUD işlemleri ve hesap yetkisi değişimi; boş bir odada rezervasyon, check-in, hizmet, hesap, atomik ödeme/check-out ve temizlik; gelecek rezervasyonu iptali; yetkisiz erişim ve çakışma kontrolleri.\n\nÇalıştırma için bugün en az bir boş/temiz oda gerekir. Koleksiyon yalnızca kendisinin oluşturduğu rezervasyon ve yönetim kayıtlarını değiştirir. Yönetim deneme kayıtları silinir. Yeni misafir hesabı, tamamlanan/iptal edilen rezervasyonlar, ödeme ve işlem geçmişi denetim amacıyla kalır. Gerçek kişisel/ödeme verisi girilmez. SQL düzeyindeki zorlanmış ödeme hatası/ROLLBACK ve eşzamanlı rezervasyon testi pytest paketindedir; üretim API'sinde hata enjekte eden bir uç nokta yoktur.\n\nNewman örneği: npx newman run docs/Mavi-Otel.postman_collection.json --env-var base_url=http://127.0.0.1:5000 --bail"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reception_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "guest_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registered_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "new_staff_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registered_guest_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "new_type_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "new_room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "new_season_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "new_service_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "new_staff_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "flow_room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "flow_reservation_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "flow_stay_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "flow_service_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "future_room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "future_reservation_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "run_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "room_number",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "today",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tomorrow",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "future_start",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "future_end",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "season_start",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "season_end",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "report_year",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "report_month",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · Başlangıç ve kimlik doğrulama",
+      "description": "Çalıştırmaya özgü değişkenleri sıfırlar; JWT oturumlarını hazırlar.",
+      "item": [
+        {
+          "name": "Bağlantı ve MySQL sağlık kontrolü",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const preserved = pm.collectionVariables.get('base_url');",
+                  "for (const key of Object.keys(pm.collectionVariables.toObject())) { if (key !== 'base_url') pm.collectionVariables.set(key, ''); }",
+                  "pm.collectionVariables.set('base_url', preserved || 'http://127.0.0.1:5000');",
+                  "const run = Date.now().toString(36) + Math.random().toString(36).slice(2,8);",
+                  "pm.collectionVariables.set('run_id', run);",
+                  "pm.collectionVariables.set('room_number', 'P' + Math.random().toString(36).slice(2,10));",
+                  "const local = new Date(Date.now() + 3*60*60*1000);",
+                  "const day = Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate());",
+                  "const iso = offset => new Date(day+offset*86400000).toISOString().slice(0,10);",
+                  "for (const [key,offset] of Object.entries({today:0,tomorrow:1,future_start:30,future_end:32,season_start:60,season_end:65})) pm.collectionVariables.set(key,iso(offset));",
+                  "pm.collectionVariables.set('report_year',local.getUTCFullYear());",
+                  "pm.collectionVariables.set('report_month',local.getUTCMonth()+1);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('MySQL bağlı', () => pm.expect(pm.response.json().data.database).to.eql('connected'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "admin · giriş ve JWT kaydet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@otel.test\",\n  \"password\": \"Otel2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('JWT ve doğru rol', function () { const d=pm.response.json().data; pm.expect(d.token).to.be.a('string').and.not.empty; pm.expect(d.user.role).to.eql('admin'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('admin_token', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "admin · oturum bilgisi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Rol doğrulandı', () => pm.expect(pm.response.json().data.role).to.eql('admin'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reception · giriş ve JWT kaydet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"resepsiyon@otel.test\",\n  \"password\": \"Otel2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('JWT ve doğru rol', function () { const d=pm.response.json().data; pm.expect(d.token).to.be.a('string').and.not.empty; pm.expect(d.user.role).to.eql('reception'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('reception_token', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reception · oturum bilgisi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Rol doğrulandı', () => pm.expect(pm.response.json().data.role).to.eql('reception'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "guest · giriş ve JWT kaydet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"misafir@otel.test\",\n  \"password\": \"Otel2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('JWT ve doğru rol', function () { const d=pm.response.json().data; pm.expect(d.token).to.be.a('string').and.not.empty; pm.expect(d.user.role).to.eql('guest'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('guest_token', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "guest · oturum bilgisi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Rol doğrulandı', () => pm.expect(pm.response.json().data.role).to.eql('guest'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Oturumsuz erişim reddedilir",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafirin yönetim erişimi reddedilir",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "rooms"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resepsiyonun yönetim erişimi reddedilir",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "rooms"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafir kaydı · gönderilen admin rolü yok sayılır",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Kaydı yapılan hesap her zaman guest rolündedir; istemcinin gönderdiği rol ayrıcalık sağlamaz.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Postman\",\n  \"last_name\": \"Deneme\",\n  \"identity_no\": \"PM{{run_id}}\",\n  \"phone\": \"05550000000\",\n  \"email\": \"guest-{{run_id}}@postman.test\",\n  \"birth_date\": \"1996-04-12\",\n  \"password\": \"Postman2026!\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('JWT ve doğru rol', function () { const d=pm.response.json().data; pm.expect(d.token).to.be.a('string').and.not.empty; pm.expect(d.user.role).to.eql('guest'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('registered_token', pm.response.json().data.token);",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('registered_guest_id', pm.response.json().data.user.guest_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Yinelenen misafir kaydı reddedilir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Postman\",\n  \"last_name\": \"Deneme\",\n  \"identity_no\": \"PM{{run_id}}\",\n  \"phone\": \"05550000000\",\n  \"email\": \"guest-{{run_id}}@postman.test\",\n  \"birth_date\": \"1996-04-12\",\n  \"password\": \"Postman2026!\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 · Okumalar, prosedürler ve görünümler",
+      "description": "API üzerinden stored procedure ve view çağrılarını doğrular.",
+      "item": [
+        {
+          "name": "Oda tipleri · herkese açık",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/room-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "room-types"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafirler · resepsiyon",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/guests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "guests"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hizmet kataloğu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "services"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Hizmet örnek verisi var', () => pm.expect(pm.response.json().data.length).to.be.above(0));",
+                  "if (pm.response.code===200 && pm.response.json().data.length) pm.collectionVariables.set('flow_service_id',pm.response.json().data[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard · iki VIEW sonucu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "dashboard"
+              ]
+            },
+            "description": "v_room_status ve v_today_movements görünümünü sorgular.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Oda durumları ve günlük hareketler', function () { const d=pm.response.json().data; pm.expect(d.rooms).to.be.an('array'); pm.expect(d.movements).to.be.an('array'); pm.expect(d.stats.total_rooms).to.be.at.least(20); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aylık doluluk ve gelir · STORED PROCEDURE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/monthly?year={{report_year}}&month={{report_month}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "monthly"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "{{report_year}}"
+                },
+                {
+                  "key": "month",
+                  "value": "{{report_month}}"
+                }
+              ]
+            },
+            "description": "sp_monthly_report(year,month) yordamını çağırır.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Aylık rapor alanları', function () { const d=pm.response.json().data; pm.expect(d).to.have.property('occupancy_rate'); pm.expect(d).to.have.property('revenue'); pm.expect(d.occupancy_rate).to.be.at.least(0).and.at.most(100); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İşlem geçmişi · TRIGGER kayıtları",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit-logs"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · Yönetim CRUD ve temizlik",
+      "description": "Beş kaynakta POST/GET/PUT/DELETE. İlişkili kayıtlar doğru sırada silinir. Personel yetkisi değişince eski JWT de güncel yetkiyi kullanır.",
+      "item": [
+        {
+          "name": "Oda tipi oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/room-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "room-types"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Tip {{run_id}}\",\n  \"capacity\": 2,\n  \"description\": \"Koleksiyon için geçici oda tipi\",\n  \"base_price\": 1200\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('new_type_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Oda tiplerini listele",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/room-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "room-types"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oluşturulan kayıt listede', function () { pm.expect(pm.response.json().data.some(x => String(x.id) === String(pm.collectionVariables.get('new_type_id')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Oda tipi güncelle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/room-types/{{new_type_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "room-types",
+                "{{new_type_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"capacity\": 3,\n  \"base_price\": 1400\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Tip güncellendi',()=>pm.expect(pm.response.json().data.capacity).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Oda oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "rooms"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"number\": \"{{room_number}}\",\n  \"floor\": 1,\n  \"room_type_id\": \"{{new_type_id}}\",\n  \"status\": \"available\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('new_room_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Odaları listele",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "rooms"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oluşturulan kayıt listede', function () { pm.expect(pm.response.json().data.some(x => String(x.id) === String(pm.collectionVariables.get('new_room_id')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Oda güncelle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/rooms/{{new_room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "rooms",
+                "{{new_room_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"floor\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Kat güncellendi',()=>pm.expect(pm.response.json().data.floor).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sezon fiyatı oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/seasonal-prices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "seasonal-prices"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_type_id\": \"{{new_type_id}}\",\n  \"start_date\": \"{{season_start}}\",\n  \"end_date\": \"{{season_end}}\",\n  \"nightly_price\": 1750\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('new_season_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sezon fiyatlarını listele",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/seasonal-prices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "seasonal-prices"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oluşturulan kayıt listede', function () { pm.expect(pm.response.json().data.some(x => String(x.id) === String(pm.collectionVariables.get('new_season_id')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sezon fiyatı güncelle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/seasonal-prices/{{new_season_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "seasonal-prices",
+                "{{new_season_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nightly_price\": 1850\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sezon fiyatı güncellendi',()=>pm.expect(pm.response.json().data.nightly_price).to.eql(1850));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ek hizmet oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "services"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Hizmet {{run_id}}\",\n  \"unit_price\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('new_service_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ek hizmetleri listele",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "services"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oluşturulan kayıt listede', function () { pm.expect(pm.response.json().data.some(x => String(x.id) === String(pm.collectionVariables.get('new_service_id')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ek hizmet güncelle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/services/{{new_service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "services",
+                "{{new_service_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unit_price\": 120\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Hizmet fiyatı güncellendi',()=>pm.expect(pm.response.json().data.unit_price).to.eql(120));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Personel ve giriş hesabı oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/staff",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "staff"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Postman\",\n  \"last_name\": \"{{run_id}}\",\n  \"position\": \"reception\",\n  \"hire_date\": \"{{today}}\",\n  \"email\": \"staff-{{run_id}}@postman.test\",\n  \"password\": \"Postman2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('new_staff_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Personelleri listele",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/staff",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "staff"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oluşturulan kayıt listede', function () { pm.expect(pm.response.json().data.some(x => String(x.id) === String(pm.collectionVariables.get('new_staff_id')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Yeni personelle giriş",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"staff-{{run_id}}@postman.test\",\n  \"password\": \"Postman2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('JWT ve doğru rol', function () { const d=pm.response.json().data; pm.expect(d.token).to.be.a('string').and.not.empty; pm.expect(d.user.role).to.eql('reception'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('new_staff_token', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Personel görevini yönetici yap",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/staff/{{new_staff_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "staff",
+                "{{new_staff_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"position\": \"admin\",\n  \"first_name\": \"Postman Güncel\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Personel güncellendi',()=>pm.expect(pm.response.json().data.position).to.eql('admin'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aynı JWT güncel rolü kullanır",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{new_staff_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Güncel yetki veritabanından okundu',()=>pm.expect(pm.response.json().data.role).to.eql('admin'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bağımlı oda tipi silinemez",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/room-types/{{new_type_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "room-types",
+                "{{new_type_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Geçici sezon fiyatını sil",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/seasonal-prices/{{new_season_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "seasonal-prices",
+                "{{new_season_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Geçici odayı sil",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/rooms/{{new_room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "rooms",
+                "{{new_room_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Geçici oda tipini sil",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/room-types/{{new_type_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "room-types",
+                "{{new_type_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Geçici hizmeti sil",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/services/{{new_service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "services",
+                "{{new_service_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Geçici personeli ve hesabını sil",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/staff/{{new_staff_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "staff",
+                "{{new_staff_id}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Silinen personelin JWT erişimi reddedilir",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{new_staff_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 · Rezervasyondan ödeme ve temizliğe",
+      "description": "Bugün boş ve temiz bir odada yalnızca bu çalıştırmanın oluşturduğu rezervasyon kullanılır. Tamamlanan konaklama ve ödeme denetim izi olarak saklanır.",
+      "item": [
+        {
+          "name": "Bugün müsait oda bul · STORED PROCEDURE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/available?check_in={{today}}&check_out={{tomorrow}}&guest_count=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "rooms",
+                "available"
+              ],
+              "query": [
+                {
+                  "key": "check_in",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "check_out",
+                  "value": "{{tomorrow}}"
+                },
+                {
+                  "key": "guest_count",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "sp_available_rooms yordamı kullanılır; check-in için durumu available olan oda seçilir.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Bugün boş ve temiz bir oda var', function () { const room=pm.response.json().data.find(r=>r.status==='available'); pm.expect(room).to.not.eql(undefined); });",
+                  "if (pm.response.code===200) { const room=pm.response.json().data.find(r=>r.status==='available'); if(room) pm.collectionVariables.set('flow_room_id',room.id); else pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafir rezervasyonu oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": \"{{flow_room_id}}\",\n  \"check_in\": \"{{today}}\",\n  \"check_out\": \"{{tomorrow}}\",\n  \"guest_count\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('flow_reservation_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aynı oda ve tarihe ikinci rezervasyon reddedilir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "Veritabanı tetikleyicisi ve oda-gece benzersizlik koruması çakışmayı engeller.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": \"{{flow_room_id}}\",\n  \"check_in\": \"{{today}}\",\n  \"check_out\": \"{{tomorrow}}\",\n  \"guest_count\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafirin kendi rezervasyonları",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oluşturulan kayıt listede', function () { pm.expect(pm.response.json().data.some(x => String(x.id) === String(pm.collectionVariables.get('flow_reservation_id')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resepsiyon check-in yapar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations/{{flow_reservation_id}}/check-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{flow_reservation_id}}",
+                "check-in"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('flow_stay_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Konaklamaya ek hizmet ekle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stays/{{flow_stay_id}}/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "stays",
+                "{{flow_stay_id}}",
+                "services"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_id\": \"{{flow_service_id}}\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafir kendi hesabını görür · STORED PROCEDURE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stays/{{flow_stay_id}}/bill",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "stays",
+                "{{flow_stay_id}}",
+                "bill"
+              ]
+            },
+            "description": "sp_stay_total yordamı ve rezervasyon anındaki gecelik fiyatlar kullanılır.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Gecelik fiyat + hizmet toplamı', function () { const d=pm.response.json().data; pm.expect(d.total).to.be.above(0); pm.expect(d.services.length).to.eql(1); pm.expect(d.nights.length).to.eql(1); pm.expect(Math.abs(d.total-d.room_total-d.services_total)).to.be.below(0.01); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Başka misafirin hesap erişimi reddedilir",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stays/{{flow_stay_id}}/bill",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "stays",
+                "{{flow_stay_id}}",
+                "bill"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registered_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check-out ve kart ödemesi · TRANSACTION",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stays/{{flow_stay_id}}/check-out",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "stays",
+                "{{flow_stay_id}}",
+                "check-out"
+              ]
+            },
+            "description": "Konaklama, ödeme, rezervasyon durumu ve oda durumunu tek transaction içinde günceller; kart bilgisi toplanmaz, ödeme türü kaydedilir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"card\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Konaklama kapandı ve bakiye sıfır', function () { const d=pm.response.json().data; pm.expect(d.stay.checked_out_at).to.be.a('string'); pm.expect(d.bill.balance).to.eql(0); pm.expect(d.bill.paid).to.eql(d.bill.total); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İkinci check-out reddedilir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stays/{{flow_stay_id}}/check-out",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "stays",
+                "{{flow_stay_id}}",
+                "check-out"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"card\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Odanın temizliğini tamamla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{flow_room_id}}/clean",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "rooms",
+                "{{flow_room_id}}",
+                "clean"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Oda tekrar boş',()=>pm.expect(pm.response.json().data.status).to.eql('available'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafir konaklama geçmişi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stays",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "stays"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Tamamlanan konaklama geçmişte',()=>pm.expect(pm.response.json().data.some(s=>String(s.id)===String(pm.collectionVariables.get('flow_stay_id')) && s.checked_out_at)).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 · Gelecek rezervasyonu ve iptal",
+      "description": "Gelecek tarihlerde oluşturulan kayıt iptal edilerek oda takvimi serbest bırakılır.",
+      "item": [
+        {
+          "name": "Gelecek tarihlerde boş oda ara",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/available?check_in={{future_start}}&check_out={{future_end}}&guest_count=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "rooms",
+                "available"
+              ],
+              "query": [
+                {
+                  "key": "check_in",
+                  "value": "{{future_start}}"
+                },
+                {
+                  "key": "check_out",
+                  "value": "{{future_end}}"
+                },
+                {
+                  "key": "guest_count",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Müsait oda var',()=>pm.expect(pm.response.json().data.length).to.be.above(0));",
+                  "if(pm.response.code===200 && pm.response.json().data.length) pm.collectionVariables.set('future_room_id',pm.response.json().data[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gelecek rezervasyonunu oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": \"{{future_room_id}}\",\n  \"check_in\": \"{{future_start}}\",\n  \"check_out\": \"{{future_end}}\",\n  \"guest_count\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('future_reservation_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Onaylı rezervasyonu yeniden onaylama reddedilir",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations/{{future_reservation_id}}/confirm",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{future_reservation_id}}",
+                "confirm"
+              ]
+            },
+            "description": "API rezervasyonu doğrudan confirmed oluşturur; onay uç noktası yalnızca pending kayıtlarda başarılı olur. Burada durum koruması doğrulanır.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{reception_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Başka misafir iptal edemez",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations/{{future_reservation_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{future_reservation_id}}",
+                "cancel"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{registered_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('Anlaşılır hata mesajı var', function () { pm.expect(pm.response.json().error).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misafir kendi rezervasyonunu iptal eder",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reservations/{{future_reservation_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{future_reservation_id}}",
+                "cancel"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{guest_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('İptal durumu kaydedildi',()=>pm.expect(pm.response.json().data.status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İptal edilen odanın tarihleri tekrar müsait",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/available?check_in={{future_start}}&check_out={{future_end}}&guest_count=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "rooms",
+                "available"
+              ],
+              "query": [
+                {
+                  "key": "check_in",
+                  "value": "{{future_start}}"
+                },
+                {
+                  "key": "check_out",
+                  "value": "{{future_end}}"
+                },
+                {
+                  "key": "guest_count",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Oda takvimden serbest bırakıldı',()=>pm.expect(pm.response.json().data.some(r=>String(r.id)===String(pm.collectionVariables.get('future_room_id')))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Son işlem geçmişini görüntüle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit-logs"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('JSON data alanı var', function () { pm.expect(pm.response.json()).to.have.property('data'); });",
+                  "pm.test('Sonuç bir dizi', function () { pm.expect(pm.response.json().data).to.be.an('array'); });",
+                  "pm.test('Bu çalıştırmanın rezervasyon logu var',()=>pm.expect(pm.response.json().data.some(r=>r.table_name==='reservations' && String(r.record_id)===String(pm.collectionVariables.get('future_reservation_id')))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143c3b">
+  <meta name="description" content="Mavi Otel rezervasyon, konaklama ve operasyon yönetimi.">
+  <title>Mavi Otel · Konaklama Yönetimi</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23143c3b'/%3E%3Cpath d='M14 45V21l18 15 18-15v24M24 45V33m16 12V33' fill='none' stroke='%23e4c99e' stroke-width='5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">İçeriğe geç</a>
+  <div id="app"><div class="boot"><span class="brand-symbol">M</span><p>Mavi Otel yükleniyor…</p></div></div>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+</body>
+</html>

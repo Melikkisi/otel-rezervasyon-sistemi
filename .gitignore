@@ -1,0 +1,16 @@
+.env
+.venv/
+.local/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+tmp/
+.DS_Store
+*.log
+*.sock
+*.pid
+node_modules/
+# Ders dokümanı depoya eklenmez
+Veritabani_Projesi_*.pdf

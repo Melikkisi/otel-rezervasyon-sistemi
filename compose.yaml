@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-mavi_otel}
+      MYSQL_USER: ${DB_USER:-otel}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Copy .env.example to .env first}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      TZ: Europe/Istanbul
+    command: ["--default-time-zone=+03:00", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+  web:
+    build: .
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-mavi_otel}
+      DB_USER: ${DB_USER:-otel}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-1}
+      SMTP_SSL: ${SMTP_SSL:-0}
+      MAIL_FROM: ${MAIL_FROM:-Mavi Otel <rezervasyon@mavi-otel.test>}
+      MAIL_DIR: /tmp/mail
+      TZ: Europe/Istanbul
+    ports:
+      - "127.0.0.1:${PORT:-5000}:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  mysql_data:
+
