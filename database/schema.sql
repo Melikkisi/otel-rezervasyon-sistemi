@@ -187,12 +187,14 @@ BEGIN
  RETURN v_total;
 END$$
 
+-- Oda tipi satırı kilitlenir; aynı tipe eşzamanlı sezon eklemeleri sırayla kontrol edilir.
+-- Tetikleyici kendi tablosunu FOR UPDATE ile okuyamaz (MySQL 1442), bu yüzden kilit oda tipindedir.
 CREATE TRIGGER trg_season_insert BEFORE INSERT ON seasonal_prices FOR EACH ROW
 BEGIN
  DECLARE v_lock INT;
  DECLARE v_conflict INT DEFAULT NULL;
  SELECT id INTO v_lock FROM room_types WHERE id=NEW.room_type_id FOR UPDATE;
- SELECT id INTO v_conflict FROM seasonal_prices WHERE room_type_id=NEW.room_type_id AND start_date<NEW.end_date AND end_date>NEW.start_date LIMIT 1 FOR UPDATE;
+ SELECT id INTO v_conflict FROM seasonal_prices WHERE room_type_id=NEW.room_type_id AND start_date<NEW.end_date AND end_date>NEW.start_date LIMIT 1;
  IF v_conflict IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Bu oda tipi için sezon tarihleri çakışıyor.'; END IF;
 END$$
 
@@ -201,7 +203,7 @@ BEGIN
  DECLARE v_lock INT;
  DECLARE v_conflict INT DEFAULT NULL;
  SELECT id INTO v_lock FROM room_types WHERE id=NEW.room_type_id FOR UPDATE;
- SELECT id INTO v_conflict FROM seasonal_prices WHERE room_type_id=NEW.room_type_id AND id<>OLD.id AND start_date<NEW.end_date AND end_date>NEW.start_date LIMIT 1 FOR UPDATE;
+ SELECT id INTO v_conflict FROM seasonal_prices WHERE room_type_id=NEW.room_type_id AND id<>OLD.id AND start_date<NEW.end_date AND end_date>NEW.start_date LIMIT 1;
  IF v_conflict IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Bu oda tipi için sezon tarihleri çakışıyor.'; END IF;
 END$$
 
